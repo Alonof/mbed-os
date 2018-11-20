@@ -59,8 +59,8 @@ __stack_size__ = 0x400;
 
 __heap_size__ = 0x6000;
 
-#if !defined(MBED_APP_START)
-  #define MBED_APP_START 0
+#if !defined(MBED_APP_START_RAM)
+  #define MBED_APP_START_RAM 0x1FFF0000
 #endif
 
 #if !defined(MBED_APP_SIZE)
@@ -71,13 +71,13 @@ HEAP_SIZE  = DEFINED(__heap_size__)  ? __heap_size__  : 0x0400;
 STACK_SIZE = DEFINED(__stack_size__) ? __stack_size__ : 0x0400;
 M_VECTOR_RAM_SIZE = DEFINED(__ram_vector_table__) ? 0x0400 : 0x0;
 
-/* Specify the memory areas */
+/* Spegit pullcify the memory areas */
 MEMORY
 {
-  m_interrupts          (RX)  : ORIGIN = MBED_APP_START, LENGTH = 0x400
-  m_flash_config        (RX)  : ORIGIN = MBED_APP_START + 0x400, LENGTH = 0x10
-  m_text                (RX)  : ORIGIN = MBED_APP_START + 0x410, LENGTH = MBED_APP_SIZE - 0x410
-  m_data                (RW)  : ORIGIN = 0x1FFF0000, LENGTH = 0x00010000
+  m_interrupts          (RX)  : ORIGIN = MBED_APP_START_RAM, LENGTH = 0x400
+  m_flash_config        (RX)  : ORIGIN = MBED_APP_START_RAM + 0x400, LENGTH = 0x10
+  m_text                (RX)  : ORIGIN = MBED_APP_START_RAM + 0x410, LENGTH = MBED_APP_SIZE - 0x410
+  /*m_data                (RW)  : ORIGIN = 0x1FFF0000, LENGTH = 0x00010000*/
   m_data_2              (RW)  : ORIGIN = 0x20000000, LENGTH = 0x00030000
 }
 
@@ -111,6 +111,9 @@ SECTIONS
     *(.glue_7)               /* glue arm to thumb code */
     *(.glue_7t)              /* glue thumb to arm code */
     *(.eh_frame)
+    *(.data)                 /* .data sections */
+    *(.data*)                /* .data* sections */
+    KEEP(*(.jcr*))
     KEEP (*(.init))
     KEEP (*(.fini))
     . = ALIGN(4);
@@ -195,29 +198,11 @@ SECTIONS
     . += M_VECTOR_RAM_SIZE;
     . = ALIGN(4);
     __interrupts_ram_end__ = .; /* Define a global symbol at data end */
-  } > m_data
+  } > m_data_2
 
 
   __VECTOR_RAM = DEFINED(__ram_vector_table__) ? __VECTOR_RAM__ : ORIGIN(m_interrupts);
   __RAM_VECTOR_TABLE_SIZE_BYTES = DEFINED(__ram_vector_table__) ? (__interrupts_ram_end__ - __interrupts_ram_start__) : 0x0;
-
-  .data :
-  {
-    PROVIDE(__etext = LOADADDR(.data));    /* Define a global symbol at end of code, */
-    PROVIDE(__DATA_ROM = LOADADDR(.data)); /* Symbol is used by startup for data initialization. */
-    . = ALIGN(4);
-    __DATA_RAM = .;
-    __data_start__ = .;      /* create a global symbol at data start */
-    *(.data)                 /* .data sections */
-    *(.data*)                /* .data* sections */
-    KEEP(*(.jcr*))
-    . = ALIGN(4);
-    __data_end__ = .;        /* define a global symbol at data end */
-  } > m_data_2 AT > m_text
-
-  __DATA_END = __DATA_ROM + (__data_end__ - __data_start__);
-  text_end = ORIGIN(m_text) + LENGTH(m_text);
-  ASSERT(__DATA_END <= text_end, "region m_text overflowed with text and data")
 
 
   /* Uninitialized data section
