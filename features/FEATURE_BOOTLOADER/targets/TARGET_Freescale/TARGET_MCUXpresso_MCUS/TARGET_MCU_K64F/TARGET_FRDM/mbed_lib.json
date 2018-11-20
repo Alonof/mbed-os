@@ -2,9 +2,9 @@
     "name": "bootloader_K64F",
     "target_overrides": {
         "*": {
-            "target.app_offset": "0xa400",
-            "target.header_offset": "0xa000",
-            "target.bootloader_img": "mbed-bootloader-k64f-block_device-sotp-v3_4_0.bin"
+            "target.app_offset": "0x1B400",
+            "target.header_offset": "0x1B000",
+            "target.bootloader_img": "BootLoader.bin"
         }
     }
 }
